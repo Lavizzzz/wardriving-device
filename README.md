@@ -1,5 +1,6 @@
 # wardriving-device
 
+Autore: Lorenzo Lavizzari
 
 Componenti:
 -  esp32
