@@ -9,6 +9,7 @@ Componenti:
 -  pulsanti
 -  cavetti vari
 
+Descrizione:
 
 Il progetto è un dispositivo di controllo e monitoraggio per un sistema di wardriving che sfrutta diverse funzionalità per rilevare e visualizzare le reti Wi-Fi circostanti insieme ai dati GPS. Il dispositivo è progettato per fornire informazioni dettagliate sulle reti Wi-Fi disponibili e per registrare le coordinate GPS della posizione in cui vengono rilevate.
 
