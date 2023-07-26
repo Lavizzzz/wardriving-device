@@ -62,9 +62,9 @@ void setup() {
   Serial.begin(115200);
   neogps.begin(9600, SERIAL_8N1, GPS_RX, GPS_TX);
 
-  //mount LittleFS
+
   if (!LittleFS.begin()) {
-    Serial.println("Errore nell'inizializzazione della memoria LittleFS");
+    Serial.println("Errore nell'inizializzazione di LittleFS");
   }
 
   pinMode(BAvanti, INPUT_PULLUP);
@@ -80,24 +80,16 @@ void setup() {
     while (true)
       ;
   }
-  
+
   isFirstScan = false;
-  //scanNetworks();
 
   connectToWiFi();
-  server.on("/download", HTTP_GET, handleDataDownload);
-  server.on("/", HTTP_GET, handleRoot);
-  server.begin();
+
   displayInit();
 }
 
 void loop() {
   gestionePulsanti();
-  // Aggiorna il display solo se è stata effettuata una scansione e isFirstScan è true
-  if (displayUpdate && !displayDistanceScreen && !selectingNetwork && isFirstScan) {
-    displayNetworks();
-    displayUpdate = false;
-  }
 
   while (neogps.available() > 0) {
     if (gps.encode(neogps.read())) {
@@ -107,7 +99,7 @@ void loop() {
           displayNetworks();
           displayUpdate = false;
         }
-      } else {
+      } else if (isFirstScan) {
         displayDistance();
       }
     }
@@ -143,7 +135,9 @@ void connectToWiFi() {
     Serial.print("IP address: ");
     Serial.println(WiFi.localIP());
     server.on("/download", HTTP_GET, handleDataDownload);
+    server.on("/", HTTP_GET, handleRoot);
     server.begin();
+
   } else {
     Serial.println("Rete WiFi non trovata");
   }
@@ -164,7 +158,7 @@ void handleRoot(AsyncWebServerRequest* request) {
   html += "<h2>Wardriving Data</h2>";
 
   if (!isFirstScan) {
-    // Mostra il messaggio di scan in corso
+
     html += "<p>Clicca sul link per scaricare i dati salvati in formato JSON:</p>";
     html += "<a href=\"/download\" download>Scarica dati</a>";
   } else {
@@ -174,11 +168,11 @@ void handleRoot(AsyncWebServerRequest* request) {
 
     // Mostra la tabella solo se il primo scan è stato completato
     html += "<h3>Elenco reti Wi-Fi rilevate</h3>";
-    html += "<table><tr><th>SSID</th><th>RSSI</th><th>Longitudine</th><th>Latitudine</th></tr>";
+    html += "<table><tr><th>SSID</th><th>RSSI</th><th>Latitudine</th><th>Longitudine</th></tr>";
     // Popola la tabella con i dati salvati
-     for (int i = 0; i < numNetworks; i++) {
-    html += "<tr><td>" + networks[i].ssid + "</td><td>" + String(networks[i].rssi) + "</td><td>" + String(gps.location.lng(), 6) + "</td><td>" + String(gps.location.lat(), 6) + "</td></tr>";
-  }
+    for (int i = 0; i < numNetworks; i++) {
+      html += "<tr><td>" + networks[i].ssid + "</td><td>" + String(networks[i].rssi) + "</td><td>" + String(gps.location.lat(), 6) + "</td><td>" + String(gps.location.lng(), 6) + "</td></tr>";
+    }
   }
 
   html += "</table></body></html>";
@@ -186,8 +180,6 @@ void handleRoot(AsyncWebServerRequest* request) {
   // Invia la risposta al client
   request->send(200, "text/html", html);
 }
-
-
 void salvaDati() {
 
   DynamicJsonDocument doc(JSON_BUFFER_SIZE);
@@ -196,9 +188,8 @@ void salvaDati() {
     JsonObject networkObj = doc.createNestedObject();
     networkObj["ssid"] = networks[i].ssid;
     networkObj["rssi"] = networks[i].rssi;
-
-    networkObj["longitudine"] = String(gps.location.lng(), 6);
     networkObj["latitudine"] = String(gps.location.lat(), 6);
+    networkObj["longitudine"] = String(gps.location.lng(), 6);
   }
 
   // Apri il file in modalità scrittura
@@ -214,7 +205,6 @@ void salvaDati() {
 
   Serial.println("Dati salvati con successo");
 }
-
 void scanNetworks() {
   numNetworks = WiFi.scanNetworks();
   Serial.println("Scan completato");
@@ -283,7 +273,7 @@ void gestionePulsanti() {
   }
 
   // Gestione del pulsante "Seleziona"
-  if (isButtonPressed(Seleziona)) {
+   if (isButtonPressed(Seleziona)) {
     if (!selectingNetwork) {
       // Seleziona una rete per visualizzare la distanza
       selectingNetwork = true;
@@ -357,14 +347,14 @@ void displayGPS() {
   if (gps.location.isValid()) {
     display.print("Lat: ");
     display.print(gps.location.lat(), 6);
-    display.print(F(","));
+    display.println("");
     display.print("Lng: ");
     display.print(gps.location.lng(), 6);
     display.println();
     display.print("Satelliti in uso: ");
     display.println(gps.satellites.value());
   } else {
-    display.print(F("GPS non agganciato"));
+    display.print("GPS non agganciato");
     display.println();
     display.print("Satelliti in uso: ");
     display.println(gps.satellites.value());
@@ -386,7 +376,7 @@ void displayInit() {
   display.println("Premere Start per");
   display.println("effettuare lo scan ");
   display.println("");
-  
+
   // Verifica se il WiFi è connesso e ottieni l'indirizzo IP
   if (WiFi.status() == WL_CONNECTED) {
     display.println("Per scaricare i dati:");
@@ -398,10 +388,11 @@ void displayInit() {
     display.println("Connettiti a una rete");
     display.println("WiFi per visualizzare l'IP");
   }
-  
+
   display.display();
 }
 float calculateDistance(int rssi) {
+  //stima della distanza rispetto al router
   float exp = (27.55 - (20 * log10(abs(rssi)))) / 20.0;
   return pow(10.0, -exp);
 }
