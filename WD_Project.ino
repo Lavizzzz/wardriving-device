@@ -17,6 +17,7 @@ AsyncWebServer server(80);
 #define BAvanti 33
 #define BIndietro 32
 #define Seleziona 14
+#define Start 13
 
 #define OLED_SDA 21
 #define OLED_SCL 22
@@ -41,6 +42,8 @@ const int maxNetworks = 50;
 WiFiNetwork networks[maxNetworks];
 int numNetworks = 0;
 int currentNetwork = 0;
+bool shouldScanNetworks = false;
+bool isFirstScan = false;
 
 //variabili gestione visualizzazione pagine display
 bool displayUpdate = true;
@@ -67,6 +70,8 @@ void setup() {
   pinMode(BAvanti, INPUT_PULLUP);
   pinMode(BIndietro, INPUT_PULLUP);
   pinMode(Seleziona, INPUT_PULLUP);
+  pinMode(Start, INPUT_PULLUP);
+
 
 
   Wire.begin(OLED_SDA, OLED_SCL);
@@ -75,28 +80,42 @@ void setup() {
     while (true)
       ;
   }
-  displayInit();
-  scanNetworks();
+  
+  isFirstScan = false;
+  //scanNetworks();
 
   connectToWiFi();
   server.on("/download", HTTP_GET, handleDataDownload);
+  server.on("/", HTTP_GET, handleRoot);
   server.begin();
+  displayInit();
 }
 
 void loop() {
+  gestionePulsanti();
+  // Aggiorna il display solo se è stata effettuata una scansione e isFirstScan è true
+  if (displayUpdate && !displayDistanceScreen && !selectingNetwork && isFirstScan) {
+    displayNetworks();
+    displayUpdate = false;
+  }
+
   while (neogps.available() > 0) {
     if (gps.encode(neogps.read())) {
       if (!displayDistanceScreen) {
-        displayNetworks();
-      } else
+        // Aggiorna il display solo se è stata effettuata una scansione e isFirstScan è true
+        if (displayUpdate && isFirstScan) {
+          displayNetworks();
+          displayUpdate = false;
+        }
+      } else {
         displayDistance();
-        
+      }
     }
   }
-  gestionePulsanti();
 }
 
 void connectToWiFi() {
+  scanNetworks();
   // Verifica se la rete ssid è disponibile nella lista delle reti trovate
   bool networkFound = false;
   for (int i = 0; i < numNetworks; i++) {
@@ -137,6 +156,38 @@ void handleDataDownload(AsyncWebServerRequest* request) {
     request->send(404, "text/plain", "File not found");
   }
 }
+void handleRoot(AsyncWebServerRequest* request) {
+  String html = "<!DOCTYPE html><html><head>";
+  html += "<title>Wardriving Data</title>";
+  html += "<style>body{font-family:Arial,sans-serif;}table{border-collapse:collapse;width:100%;}th,td{border:1px solid #dddddd;text-align:left;padding:8px;}</style>";
+  html += "</head><body>";
+  html += "<h2>Wardriving Data</h2>";
+
+  if (!isFirstScan) {
+    // Mostra il messaggio di scan in corso
+    html += "<p>Clicca sul link per scaricare i dati salvati in formato JSON:</p>";
+    html += "<a href=\"/download\" download>Scarica dati</a>";
+  } else {
+    // Mostra il link per scaricare i dati
+    html += "<p>Clicca sul link per scaricare i dati salvati in formato JSON:</p>";
+    html += "<a href=\"/download\" download>Scarica dati</a>";
+
+    // Mostra la tabella solo se il primo scan è stato completato
+    html += "<h3>Elenco reti Wi-Fi rilevate</h3>";
+    html += "<table><tr><th>SSID</th><th>RSSI</th><th>Longitudine</th><th>Latitudine</th></tr>";
+    // Popola la tabella con i dati salvati
+     for (int i = 0; i < numNetworks; i++) {
+    html += "<tr><td>" + networks[i].ssid + "</td><td>" + String(networks[i].rssi) + "</td><td>" + String(gps.location.lng(), 6) + "</td><td>" + String(gps.location.lat(), 6) + "</td></tr>";
+  }
+  }
+
+  html += "</table></body></html>";
+
+  // Invia la risposta al client
+  request->send(200, "text/html", html);
+}
+
+
 void salvaDati() {
 
   DynamicJsonDocument doc(JSON_BUFFER_SIZE);
@@ -163,6 +214,7 @@ void salvaDati() {
 
   Serial.println("Dati salvati con successo");
 }
+
 void scanNetworks() {
   numNetworks = WiFi.scanNetworks();
   Serial.println("Scan completato");
@@ -176,8 +228,6 @@ void scanNetworks() {
     networks[i].ssid = WiFi.SSID(i);
     networks[i].rssi = WiFi.RSSI(i);
   }
-
-  salvaDati();
 }
 void displayNetworks() {
 
@@ -221,6 +271,17 @@ void gestionePulsanti() {
   totalPages = (numNetworks + networksPerPage - 1) / networksPerPage;
   bool pageChanged = false;
 
+  if (isButtonPressed(Start)) {
+    shouldScanNetworks = true;
+  }
+
+  if (shouldScanNetworks) {
+    scanNetworks();
+    salvaDati();
+    shouldScanNetworks = false;  // Imposta nuovamente su false per evitare di riscansionare continuamente
+    isFirstScan = true;          //abilita aggiornamento schermo
+  }
+
   // Gestione del pulsante "Seleziona"
   if (isButtonPressed(Seleziona)) {
     if (!selectingNetwork) {
@@ -228,7 +289,7 @@ void gestionePulsanti() {
       selectingNetwork = true;
       displayDistanceScreen = true;
       displayDistance();
-      
+
     } else {
       // Torna alla visualizzazione delle reti disponibili
       selectingNetwork = false;
@@ -268,7 +329,8 @@ void gestionePulsanti() {
     displayUpdate = true;
   }
 
-  if (displayUpdate && !displayDistanceScreen && !selectingNetwork) {
+  // Aggiorna il display solo se è stata effettuata una scansione e isFirstScan è true
+  if (displayUpdate && !displayDistanceScreen && !selectingNetwork && isFirstScan) {
     displayNetworks();
     displayUpdate = false;
   }
@@ -314,12 +376,32 @@ void displayInit() {
   display.clearDisplay();
   display.setTextColor(WHITE);
   display.setTextSize(1);
+
+
   display.setCursor(0, 0);
+
+  // Mostra il testo
   display.println("Wardriving");
+  display.println("");
+  display.println("Premere Start per");
+  display.println("effettuare lo scan ");
+  display.println("");
+  
+  // Verifica se il WiFi è connesso e ottieni l'indirizzo IP
+  if (WiFi.status() == WL_CONNECTED) {
+    display.println("Per scaricare i dati:");
+    display.print("http:\\ ");
+    display.println(WiFi.localIP());
+    display.print("sulla rete:");
+    display.println(ssid);
+  } else {
+    display.println("Connettiti a una rete");
+    display.println("WiFi per visualizzare l'IP");
+  }
+  
   display.display();
 }
 float calculateDistance(int rssi) {
   float exp = (27.55 - (20 * log10(abs(rssi)))) / 20.0;
   return pow(10.0, -exp);
 }
-
