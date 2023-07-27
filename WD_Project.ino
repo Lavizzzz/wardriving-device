@@ -99,7 +99,7 @@ void loop() {
           displayNetworks();
           displayUpdate = false;
         }
-      } else if (isFirstScan) {
+      } else {
         displayDistance();
       }
     }
@@ -275,7 +275,7 @@ void gestionePulsanti() {
   }
 
   // Gestione del pulsante "Seleziona"
-   if (isButtonPressed(Seleziona)) {
+   if (isButtonPressed(Seleziona) && isFirstScan) {
     if (!selectingNetwork) {
       // Seleziona una rete per visualizzare la distanza
       selectingNetwork = true;
