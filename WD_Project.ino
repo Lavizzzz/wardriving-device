@@ -268,6 +268,8 @@ void gestionePulsanti() {
   if (shouldScanNetworks) {
     scanNetworks();
     salvaDati();
+    displayNetworks();
+    displayUpdate = true;
     shouldScanNetworks = false;  // Imposta nuovamente su false per evitare di riscansionare continuamente
     isFirstScan = true;          //abilita aggiornamento schermo
   }
@@ -381,7 +383,7 @@ void displayInit() {
     display.println(ssid);
   } else {
     display.println("Connettiti a una rete");
-    display.println("WiFi per visualizzare l'IP");
+    display.println("WiFi per scaricare i dati");
   }
 
   display.display();
