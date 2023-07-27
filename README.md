@@ -23,6 +23,23 @@ Modalità di Visualizzazione: Il dispositivo offre due modalità di visualizzazi
 
 Download dati: I dati delle reti Wi-Fi e dei GPS possono essere scaricati, in formato JSON, tramite una richiesta HTTP al server web incorporato nel sistema. 
 
+
+La funzione calculateDistance() viene utilizzata per stimare la distanza approssimativa tra il dispositivo (ESP32) e il router WiFi basandosi sulla potenza del segnale RSSI (Received Signal Strength Indicator) ricevuto dal router. Il RSSI è un valore negativo espresso in decibel (dBm) e indica la potenza del segnale ricevuto dal dispositivo dal router.
+
+Nella funzione, la stima della distanza viene effettuata utilizzando un modello empirico noto come "propagazione del segnale RSSI" che assume un decremento esponenziale della potenza del segnale con l'aumentare della distanza tra il dispositivo e il router.
+
+La formula utilizzata per il calcolo della distanza è:
+
+```
+Distance = 10 ^ ((MeasuredPower - RSSI) / (10 * n))
+
+``` 
+dove:
+
+MeasuredPower è la potenza del segnale RSSI misurata (in dBm) a una distanza nota dal router (punto di riferimento, 27,55 a un metro circa).
+RSSI è la potenza del segnale RSSI misurata (in dBm) dal dispositivo verso il router.
+n è un fattore di attenuazione del segnale che dipende da vari fattori ambientali, come ostacoli, interferenze e riflessioni del segnale.
+
 - link repo: https://github.com/Lavizzzz/wardriving-device
 
 - Licenza: GNU GENERAL PUBLIC LICENSE version 3 (GPLv3)
