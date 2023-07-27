@@ -36,7 +36,7 @@ Distance = 10 ^ ((MeasuredPower - RSSI) / (10 * n))
 ``` 
 dove:
 
-MeasuredPower è la potenza del segnale RSSI misurata (in dBm) a una distanza nota dal router (punto di riferimento, 27,55 a un metro circa).
+MeasuredPower è la potenza del segnale RSSI misurata (in dBm) a una distanza nota dal router ( 27,55 a un metro circa).
 RSSI è la potenza del segnale RSSI misurata (in dBm) dal dispositivo verso il router.
 n è un fattore di attenuazione del segnale che dipende da vari fattori ambientali, come ostacoli, interferenze e riflessioni del segnale.
 
