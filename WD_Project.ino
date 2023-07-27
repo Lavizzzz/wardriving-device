@@ -327,13 +327,12 @@ void gestionePulsanti() {
 }
 void displayDistance() {
 
-  WiFiNetwork selectedNetwork = networks[currentNetwork];
-  float distance = calculateDistance(selectedNetwork.rssi);
+  float distance = calculateDistance(networks[currentNetwork].rssi);
 
   display.clearDisplay();
   display.setCursor(0, 0);
   display.print("SSID: ");
-  display.println(selectedNetwork.ssid);
+  display.println(networks[currentNetwork].ssid);
   display.print("Distance: ");
   display.print(distance);
   display.print(" meters");
