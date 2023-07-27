@@ -95,7 +95,7 @@ void loop() {
     if (gps.encode(neogps.read())) {
       if (!displayDistanceScreen) {
         // Aggiorna il display solo se è stata effettuata una scansione e isFirstScan è true
-        if (displayUpdate && isFirstScan) {
+        if (displayUpdate ) {
           displayNetworks();
           displayUpdate = false;
         }
@@ -293,7 +293,7 @@ void gestionePulsanti() {
   }
 
   // Gestione del pulsante "Avanti"
-  if (isButtonPressed(BAvanti)) {
+  if (isButtonPressed(BAvanti) && isFirstScan) {
     currentNetwork++;
     if (currentNetwork >= numNetworks) {
       currentNetwork = 0;
@@ -303,7 +303,7 @@ void gestionePulsanti() {
   }
 
   // Gestione del pulsante "Indietro"
-  if (isButtonPressed(BIndietro)) {
+  if (isButtonPressed(BIndietro) && isFirstScan) {
     currentNetwork--;
     if (currentNetwork < 0) {
       currentNetwork = numNetworks - 1;
