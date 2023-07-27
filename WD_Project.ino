@@ -295,10 +295,8 @@ void gestionePulsanti() {
     currentNetwork++;
     if (currentNetwork >= numNetworks) {
       currentNetwork = 0;
-      pageChanged = true;
-    } else {
-      pageChanged = true;
-    }
+    } 
+    pageChanged = true;
     displayUpdate = true;
   }
 
@@ -307,10 +305,8 @@ void gestionePulsanti() {
     currentNetwork--;
     if (currentNetwork < 0) {
       currentNetwork = numNetworks - 1;
-      pageChanged = true;
-    } else {
-      pageChanged = true;
-    }
+    } 
+    pageChanged = true;
     displayUpdate = true;
   }
 
